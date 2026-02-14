@@ -1,5 +1,4 @@
 import random
-import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,9 +6,10 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 from pathlib import Path
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
+
+from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
+from src.neural_net import SimpleNN
+
 
 # set seed
 torch.manual_seed(42)
@@ -27,64 +27,14 @@ root_directory_path = Path(f"{project_dir}/intro-mlops-1/").expanduser()
 
 data_path =  root_directory_path / "data" / "data.csv" # NOTE: make sure to update the path when you create the new directories i.e / "data" / "data.csv"
 
-print("Loading dataset...")
-data = pd.read_csv(data_path)
-print(f"Dataset shape: {data.shape}")
-
-print("Preprocessing data...")
-# Remove any missing values
-data = data.dropna()
-
-# Splitting data into features and target
-feature_cols = data.columns[:-1].tolist()
-target_col = data.columns[-1]
-
-X = data[feature_cols].to_numpy()
-y = data[target_col].to_numpy()
-
-# Predicting string labels so encode them
-label_encoder = LabelEncoder()
-y = label_encoder.fit_transform(y)
-
-# Normalize features
-X = (X - X.mean(axis=0)) / X.std(axis=0)
+# Load and prepross data
+X, y, label_encoder = load_and_preprocess_data(data_path)
 
 # Split data 80/20
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, train_size=0.8, random_state=42, shuffle=True
-)
-
-
-print(f"Training set size: {len(X_train)}")
-print(f"Test set size: {len(X_test)}")
-
-# Convert to PyTorch tensors (required)
-X_train = torch.FloatTensor(X_train)
-X_test = torch.FloatTensor(X_test)
-y_train = torch.LongTensor(y_train)
-y_test = torch.LongTensor(y_test)
+X_train, X_test, y_train, y_test = split_data(X, y, train_ratio=0.8)
 
 # Create data loaders
-train_dataset = TensorDataset(X_train, y_train)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-
-# Simple NN declaration
-class SimpleNN(nn.Module):
-  def __init__(self, input_size, num_classes=3):
-    super(SimpleNN, self).__init__()
-    self.layer1 = nn.Linear(input_size, 64)
-    self.layer2 = nn.Linear(64, 32)
-    self.layer3 = nn.Linear(32, num_classes)
-    self.relu = nn.ReLU()
-    self.dropout = nn.Dropout(0.2)
-    
-  def forward(self, x):
-    x = self.relu(self.layer1(x))
-    x = self.dropout(x)
-    x = self.relu(self.layer2(x))
-    x = self.dropout(x)
-    x = self.layer3(x)
-    return x
+train_loader = create_data_loaders(X_train, y_train, batch_size=32)
 
 # Initialize model, loss function, optimizer, and set epochs
 input_size = X_train.shape[1]
