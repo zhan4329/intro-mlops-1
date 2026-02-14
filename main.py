@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
 from src.neural_net import SimpleNN
+from src.trainer import train_model
 
 
 # set seed
@@ -45,46 +46,11 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 epochs = 50
 
-# Train Model loop! - Start
-print("Starting training...")
-train_losses = [] # these are for metric tracking, these will be returned from train_model()
-test_losses = []
-accuracies = []
-
-for epoch in range(epochs):
-  # Train one epoch - Start
-  model.train()
-  total_loss = 0
-  for batch_X, batch_y in train_loader:
-    optimizer.zero_grad()
-    outputs = model(batch_X)
-    loss = criterion(outputs, batch_y)
-    loss.backward()
-    optimizer.step()
-    total_loss += loss.item()
-  avg_train_loss = total_loss / len(train_loader)
-  # Train one epoch - End
-
-  train_losses.append(avg_train_loss)
-  
-  # Evaluate on test set - Start
-  model.eval()
-  with torch.no_grad():
-    test_outputs = model(X_test)
-    test_loss = criterion(test_outputs, y_test)
-    _, predicted = torch.max(test_outputs, 1)
-    # Calculate Accuracy
-    accuracy = (predicted == y_test).sum().item() / len(y_test)
-  # Evaluate on test set - End
-
-  test_losses.append(test_loss.item())
-  accuracies.append(accuracy)
-  
-  if (epoch + 1) % 10 == 0:
-    print(f'Epoch [{epoch+1}/{epochs}], Train Loss: {avg_train_loss:.4f}, Test Loss: {test_loss.item():.4f}')
-  # Train Model loop! - End 
-
-print("Training completed!")
+# Train model
+train_losses, test_losses, accuracies = train_model(
+  model=model, train_loader=train_loader, 
+  X_test=X_test, y_test=y_test, criterion=criterion, 
+  optimizer=optimizer, epochs=epochs)
 
 plot_directory = root_directory_path / "" # NOTE: change to "plots" when you make new directory
 
