@@ -67,6 +67,18 @@ def main():
         f.write(f"Training epochs: {epochs}\n")
         f.write(f"Model architecture: SimpleNN with {input_size} input features\n")
 
+    models_dir = root_directory_path / "models"
+
+    # Save model weights
+    torch.save(model.state_dict(), models_dir / "best_model.pth")
+    print("Model saved to models/best_model.pth")
+
+    # Save the label encoder
+    import pickle
+    with open(models_dir / "label_encoder.pkl", "wb") as f:
+        pickle.dump(label_encoder, f)
+    print("Label encoder saved to models/label_encoder.pkl")
+
     print("All done!") 
 
 if __name__ == "__main__":
