@@ -1,6 +1,8 @@
 # src/trainer.py
 import torch
 
+from .metrics import calculate_accuracy
+
 torch.manual_seed(42)
 
 def train_one_epoch(model, train_loader, optimizer, criterion):
@@ -28,7 +30,7 @@ def evaluate_model(model, criterion, X_test, y_test):
         test_loss = criterion(test_outputs, y_test)
         _, predicted = torch.max(test_outputs, 1)
         # Calculate Accuracy
-        accuracy = (predicted == y_test).sum().item() / len(y_test)
+        accuracy = calculate_accuracy(predicted, y_test)
     # Evaluate on test set - End
     return accuracy, test_loss
 
