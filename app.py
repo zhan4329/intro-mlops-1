@@ -2,18 +2,19 @@ from fastapi import FastAPI
 import torch
 import pickle
 
+from src.config import INPUT_SIZE, NUM_CLASSES, MODEL_PATH
 from src.neural_net import SimpleNN
 
 app = FastAPI()
 
 # loading the model up
-input_size = 4 # Iris dataset has 4 features
-num_classes = 3
-model = SimpleNN(input_size, num_classes) # recreating the model architecture!
-model.load_state_dict(torch.load("models/best_model.pth"))
+# input_size = 4 # Iris dataset has 4 features
+# num_classes = 3
+model = SimpleNN(INPUT_SIZE, NUM_CLASSES) # recreating the model architecture!
+model.load_state_dict(torch.load(MODEL_PATH / "best_model.pth"))
 model.eval()
 
-with open("models/label_encoder.pkl", "rb") as f:
+with open(MODEL_PATH / "label_encoder.pkl", "rb") as f:
     label_encoder = pickle.load(f)
 
 @app.post("/predict")
