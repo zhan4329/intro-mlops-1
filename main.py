@@ -3,9 +3,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pytorch_lightning as pl
 
 from src.config import DATA_PATH, MODEL_PATH, PLOT_PATH, LOGS_PATH, \
-    TRAIN_SPLIT, BATCH_SIZE, LEARNING_RATE, EPOCHS
+    TRAIN_SPLIT, BATCH_SIZE, LEARNING_RATE, EPOCHS, INPUT_SIZE, NUM_CLASSES
 from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
 from src.neural_net import SimpleNN
 from src.trainer import train_model
