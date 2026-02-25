@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
 
+from intro_mlops_2.src.lightning import WineQualityClassifier
 from src.config import DATA_PATH, MODEL_PATH, PLOT_PATH, LOGS_PATH, \
     TRAIN_SPLIT, BATCH_SIZE, LEARNING_RATE, EPOCHS, INPUT_SIZE, NUM_CLASSES
 from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
@@ -31,9 +32,13 @@ def main():
     input_size = X_train.shape[1]
     num_classes = len(np.unique(y))
 
-    model = SimpleNN(input_size, num_classes)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    # model = SimpleNN(input_size, num_classes)
+    simple_nn = SimpleNN(INPUT_SIZE, NUM_CLASSES)
+    model = WineQualityClassifier(simple_nn, learning_rate=0.001, epochs=5)
+
+    # don’t need these anymore since they are methods within the LightningModule class!
+    # criterion = nn.CrossEntropyLoss()
+    # optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     epochs = EPOCHS
 
     # Train model
