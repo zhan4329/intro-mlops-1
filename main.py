@@ -6,11 +6,13 @@ import torch.optim as optim
 import pytorch_lightning as pl
 
 from intro_mlops_2.src.lightning import WineQualityClassifier
+from intro_mlops_2.src.data_loader import WineQualityDataModule
+
 from src.config import DATA_PATH, MODEL_PATH, PLOT_PATH, LOGS_PATH, \
     TRAIN_SPLIT, BATCH_SIZE, LEARNING_RATE, EPOCHS, INPUT_SIZE, NUM_CLASSES
-from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
+# from src.data_loader import load_and_preprocess_data, split_data, create_data_loaders
 from src.neural_net import SimpleNN
-from src.trainer import train_model
+# from src.trainer import train_model
 from src.visualization import plot_training_loss, plot_accuracy
 
 # set seed
@@ -19,33 +21,20 @@ np.random.seed(42)
 random.seed(42)
 
 def main():
-    # Load and prepross data
-    X, y, label_encoder = load_and_preprocess_data(DATA_PATH / 'data.csv')
-
-    # Split data 80/20
-    X_train, X_test, y_train, y_test = split_data(X, y, train_ratio=TRAIN_SPLIT)
-
-    # Create data loaders
-    train_loader = create_data_loaders(X_train, y_train, batch_size=BATCH_SIZE)
-
-    # Initialize model, loss function, optimizer, and set epochs
-    input_size = X_train.shape[1]
-    num_classes = len(np.unique(y))
-
-    # model = SimpleNN(input_size, num_classes)
+    # Initialize model and dataloader
     simple_nn = SimpleNN(INPUT_SIZE, NUM_CLASSES)
-    model = WineQualityClassifier(simple_nn, learning_rate=0.001, epochs=5)
+    model = WineQualityClassifier(simple_nn, learning_rate=LEARNING_RATE, epochs=EPOCHS)
+    datamodule = WineQualityDataModule(data_path=DATA_PATH / "wine_quality_type.csv", batch_size=BATCH_SIZE, train_split=TRAIN_SPLIT)
 
-    # don’t need these anymore since they are methods within the LightningModule class!
-    # criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    epochs = EPOCHS
+    # Initialize trainer object and train
+    trainer = pl.Trainer(max_epochs=model.hparams.epochs)
+    trainer.fit(model, datamodule=datamodule)
 
     # Train model
-    train_losses, test_losses, accuracies = train_model(
-        model=model, train_loader=train_loader, 
-        X_test=X_test, y_test=y_test, criterion=criterion, 
-        optimizer=optimizer, epochs=epochs)
+    # train_losses, test_losses, accuracies = train_model(
+    #     model=model, train_loader=train_loader, 
+    #     X_test=X_test, y_test=y_test, criterion=criterion, 
+    #     optimizer=optimizer, epochs=epochs)
 
     # Plot metrics
     plot_training_loss(train_losses, test_losses, 
@@ -58,8 +47,8 @@ def main():
     print("Final Test Accuracy: ", round(accuracy, 4))
     with open(LOGS_PATH / 'results.log', 'w') as f:
         f.write(f"Final Test Accuracy: {accuracy}\n")
-        f.write(f"Training epochs: {epochs}\n")
-        f.write(f"Model architecture: SimpleNN with {input_size} input features\n")
+        f.write(f"Training epochs: {model.hparams.epochs}\n")
+        f.write(f"Model architecture: SimpleNN with {INPUT_SIZE} input features\n")
 
     # Save model weights
     torch.save(model.state_dict(), MODEL_PATH / "best_model.pth")
@@ -68,7 +57,7 @@ def main():
     # Save the label encoder
     import pickle
     with open(MODEL_PATH / "label_encoder.pkl", "wb") as f:
-        pickle.dump(label_encoder, f)
+        pickle.dump(datamodule.label_encoder, f)
     print("Label encoder saved to models/label_encoder.pkl")
 
     print("All done!") 

@@ -1,6 +1,7 @@
-# src/data_loader.py
+# src/data_loader.py - project 5 version
+
+import pytorch_lightning as pl
 import pandas as pd
-import numpy as np
 import torch
 
 from sklearn.preprocessing import LabelEncoder
@@ -8,54 +9,58 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
 torch.manual_seed(42)
-np.random.seed(42)
 
-def load_and_preprocess_data(data_path):
-    """Load and preprocess the dataset"""
-    print("Loading dataset...")
-    data = pd.read_csv(data_path)
-    print(f"Dataset shape: {data.shape}")
+class WineQualityDataModule(pl.LightningDataModule):
+    def __init__(self, data_path, batch_size=32, train_split=0.8): # you can add more parameters here if you want
+        super().__init__()
+        self.data_path = data_path
+        self.batch_size = batch_size
+        self.train_split = train_split
 
-    print("Preprocessing data...")
-    # Remove any missing values
-    data = data.dropna()
+    def setup(self, stage=None):
+        # Load and preprocess data - same logic from load_and_preprocess_data()
+        data = pd.read_csv(self.data_path).dropna()
 
-    # Splitting data into features and target
-    feature_cols = data.columns[:-1].tolist()
-    target_col = data.columns[-1]
+        # Create quality bins
+        def bin_quality(quality):
+            if quality <= 4:
+                return 0  # Bad
+            elif quality <= 7:
+                return 1  # Mid
+            else:
+                return 2  # Good
 
-    X = data[feature_cols].to_numpy()
-    y = data[target_col].to_numpy()
+        # Apply binning
+        data['quality_binned'] = data['quality'].apply(bin_quality)
 
-    # Predicting string labels so encode them
-    label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(y)
+        # Features and target
+        X = data.drop(['quality', 'quality_binned', 'type'], axis=1).values # .values converts the dataframe to a numpy array
+        y = data['quality_binned'].values
 
-    # Normalize features
-    X = (X - X.mean(axis=0)) / X.std(axis=0)
+        # Normalize features
+        X = (X - X.mean(axis=0)) / X.std(axis=0)
 
-    return X, y, label_encoder
+        # Encode labels
+        self.label_encoder = LabelEncoder()
+        y = self.label_encoder.fit_transform(y)
 
-def split_data(X, y, train_ratio=0.8):
-    """Split data into train and test sets"""
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, train_size=train_ratio, random_state=42, shuffle=True
-    )
+        # Split data - same logic from split_data()
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, train_size=self.train_split, random_state=42, shuffle=True
+        )
 
-    print(f"Training set size: {len(X_train)}")
-    print(f"Test set size: {len(X_test)}")
+        # Convert to tensors - saving these in self so we can use them in our dataloaders
+        self.train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
+        self.val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
 
-    # Convert to PyTorch tensors (required)
-    X_train = torch.FloatTensor(X_train)
-    X_test = torch.FloatTensor(X_test)
-    y_train = torch.LongTensor(y_train)
-    y_test = torch.LongTensor(y_test)
+    def train_dataloader(self):
+        """Return the training data loader"""
+        return DataLoader(
+            self.train_dataset, batch_size=self.batch_size, shuffle=True
+        )
 
-    return X_train, X_test, y_train, y_test
-
-def create_data_loaders(X_train, y_train, batch_size=32):
-    """Create PyTorch data loaders"""
-    train_dataset = TensorDataset(X_train, y_train)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
-    return train_loader
+    def val_dataloader(self):
+        """Return the validation data loader"""
+        return DataLoader(
+            self.val_dataset, batch_size=self.batch_size, shuffle=True
+        )
