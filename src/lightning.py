@@ -6,6 +6,8 @@ import torch
 from torch import nn
 from intro_mlops_2.configs.validation import load_config
 
+torch.manual_seed(42)
+
 class WineQualityClassifier(pl.LightningModule):
     def __init__(self, model, learning_rate, epochs):
         super().__init__()
