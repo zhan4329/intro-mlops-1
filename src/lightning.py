@@ -11,6 +11,19 @@ class WineQualityClassifier(pl.LightningModule):
         self.model = model
         self.loss_fn = nn.CrossEntropyLoss() # cross entropy loss is a common loss function for classification tasks
 
+    @classmethod
+    def from_config_path(cls, model_cls: nn.Module, config_path: str):
+        config = load_config(config_path)
+        model = model_cls( # instantiate the model with the input size and number of classes from the config
+            input_size=config.model.input_size,
+            num_classes=config.model.num_classes,
+        )
+        return cls( # return the class with the model, learning rate, and epochs from the config
+             model=model,
+             learning_rate=config.training.learning_rate,
+             epochs=config.training.epochs,
+        )
+
     def forward(self, x):
         return self.model(x)
 

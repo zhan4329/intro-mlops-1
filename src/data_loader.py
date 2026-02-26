@@ -4,11 +4,12 @@ import pytorch_lightning as pl
 import pandas as pd
 import torch
 
+torch.manual_seed(42)
+
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
-
-torch.manual_seed(42)
+from intro_mlops_2.configs.validation import load_config
 
 class WineQualityDataModule(pl.LightningDataModule):
     def __init__(self, data_path, batch_size=32, train_split=0.8): # you can add more parameters here if you want
@@ -16,6 +17,15 @@ class WineQualityDataModule(pl.LightningDataModule):
         self.data_path = data_path
         self.batch_size = batch_size
         self.train_split = train_split
+
+    @classmethod
+    def from_config_path(cls, config_path, data_path):
+        config = load_config(config_path)
+        return cls(
+            data_path=data_path,
+            batch_size=config.training.batch_size,
+            train_split=config.training.train_split
+        )
 
     def setup(self, stage=None):
         # Load and preprocess data - same logic from load_and_preprocess_data()

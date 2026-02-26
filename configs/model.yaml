@@ -7,6 +7,6 @@ training:
   epochs: 5 # less epochs for faster training
 
 model:
-  input_size: 11
+  input_size: 11.1
   num_classes: 3 # multi-class
   # typically would have more params like dropout rate, or number of hidden layers but for simplicity
