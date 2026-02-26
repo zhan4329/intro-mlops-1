@@ -3,9 +3,11 @@
 import pytorch_lightning as pl
 import pandas as pd
 import torch
+import pickle
 
 torch.manual_seed(42)
 
+from intro_mlops_2.configs.config import MODEL_PATH
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
@@ -27,7 +29,7 @@ class WineQualityDataModule(pl.LightningDataModule):
             train_split=config.training.train_split
         )
 
-    def setup(self, stage=None):
+    def setup(self, stage: str):
         # Load and preprocess data - same logic from load_and_preprocess_data()
         data = pd.read_csv(self.data_path).dropna()
 
@@ -62,6 +64,10 @@ class WineQualityDataModule(pl.LightningDataModule):
         # Convert to tensors - saving these in self so we can use them in our dataloaders
         self.train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
         self.val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
+
+        # Save the label encoder
+        with open(MODEL_PATH / "label_encoder.pkl", "wb") as f:
+            pickle.dump(self.label_encoder, f)
 
     def train_dataloader(self):
         """Return the training data loader"""

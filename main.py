@@ -1,21 +1,21 @@
+# main.py
 import pytorch_lightning as pl
 
-from intro_mlops_2.src.lightning import WineQualityClassifier
+from intro_mlops_2.configs.config import *
 from intro_mlops_2.src.data_loader import WineQualityDataModule
-from intro_mlops_2.src.config import DATA_PATH, MODEL_PATH, PLOT_PATH, LOGS_PATH, \
-    TRAIN_SPLIT, BATCH_SIZE, LEARNING_RATE, EPOCHS, INPUT_SIZE, NUM_CLASSES
+from intro_mlops_2.src.lightning import WineQualityClassifier
 from intro_mlops_2.src.neural_net import SimpleNN
 
+# Create model and datamodule from config
+model = WineQualityClassifier.from_config_path(SimpleNN, CONFIG_PATH / "model.yaml")
+datamodule = WineQualityDataModule.from_config_path(CONFIG_PATH / "model.yaml", DATA_PATH / "wine_quality_type.csv")
 
-def main():
-    # Initialize model and dataloader
-    simple_nn = SimpleNN(INPUT_SIZE, NUM_CLASSES)
-    model = WineQualityClassifier(simple_nn, learning_rate=LEARNING_RATE, epochs=EPOCHS)
-    datamodule = WineQualityDataModule(data_path=DATA_PATH / "wine_quality_type.csv", batch_size=BATCH_SIZE, train_split=TRAIN_SPLIT)
+# Initialize trainer and train
+trainer = pl.Trainer(max_epochs=model.hparams.epochs) # notice the hparams.epochs is being used to set the max number of epochs based on the models config
+trainer.fit(model, datamodule=datamodule)
 
-    # Initialize trainer object and train
-    trainer = pl.Trainer(max_epochs=model.hparams.epochs)
-    trainer.fit(model, datamodule=datamodule)
+# Validate the model (output includes val_loss and val_accuracy)
+val_results = trainer.validate(model, datamodule=datamodule)
+print("Validation results:", val_results)
 
-if __name__ == "__main__":
-    main()
+# remove all the code to graph and save model weights since we are not using them anymore.
