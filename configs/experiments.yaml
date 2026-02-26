@@ -1,0 +1,26 @@
+# configs/experiments.yaml
+experiments:
+  baseline:
+    training: {train_split: 0.8, batch_size: 32, learning_rate: 0.001, epochs: 50}
+    model: {input_size: 11, num_classes: 3}
+  fast_run:
+    training: {train_split: 0.6, batch_size: 64, learning_rate: 0.002, epochs: 100}
+    model: {input_size: 11, num_classes: 3}
+
+
+# # Add the following to validation.py for experiment
+# class ExperimentConfig(BaseModel):
+#     training: TrainingConfig
+#     model: ModelConfig
+
+# class FullConfig(BaseModel):
+#     experiments: Dict[str, ExperimentConfig]
+
+# # Then access the experiments like so
+# from intro_mlops_2.configs.validation import load_config
+
+# config = load_config("configs/experiments.yaml")
+# baseline_config = config.experiments["baseline"] # can just pass this to the datamodule or classifier
+# fast_run_config = config.experiments["fast_run"]
+# print(baseline_config)
+# print(fast_run_config)
